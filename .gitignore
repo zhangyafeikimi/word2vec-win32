@@ -29,6 +29,9 @@ Release
 *test
 *log
 
+*.exe
 text8
+text8-phrase
 vectors.bin
+vectors-phrase.bin
 

@@ -16,15 +16,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#if defined _WIN32
-# include "win32-port.h"
-#else
-# include <pthread.h>
-#endif
 
 #define MAX_STRING 60
 
-const int vocab_hash_size = 500000000; // Maximum 500M entries in the vocabulary
+// 500000000 will cause a malloc failure
+const int vocab_hash_size = 100000000; // Maximum 500M entries in the vocabulary
 
 typedef float real;                    // Precision of float numbers
 
