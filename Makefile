@@ -1,6 +1,5 @@
 CC = gcc
-#The -Ofast might not work with older versions of gcc; in that case, use -O2
-CFLAGS = -lm -pthread -Ofast -march=native -Wall -funroll-loops -Wno-unused-result
+CFLAGS = -lm -O2 -march=native -Wall -funroll-loops -Wno-unused-result
 
 all: word2vec word2phrase distance word-analogy compute-accuracy
 
@@ -14,7 +13,6 @@ word-analogy : word-analogy.c
 	$(CC) word-analogy.c -o word-analogy $(CFLAGS)
 compute-accuracy : compute-accuracy.c
 	$(CC) compute-accuracy.c -o compute-accuracy $(CFLAGS)
-	chmod +x *.sh
 
 clean:
-	rm -rf word2vec word2phrase distance word-analogy compute-accuracy
+	rm -rf word2vec.exe word2phrase.exe distance.exe word-analogy.exe compute-accuracy.exe
