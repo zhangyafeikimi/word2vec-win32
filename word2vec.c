@@ -143,7 +143,7 @@ int AddWordToVocab(char *word) {
 
 // Used later for sorting by word counts
 int VocabCompare(const void *a, const void *b) {
-    return ((struct vocab_word *)b)->cn - ((struct vocab_word *)a)->cn;
+  return ((struct vocab_word *)b)->cn - ((struct vocab_word *)a)->cn;
 }
 
 // Sorts the vocabulary by frequency using word counts
@@ -155,11 +155,12 @@ void SortVocab() {
   for (a = 0; a < vocab_hash_size; a++) vocab_hash[a] = -1;
   size = vocab_size;
   train_words = 0;
-  for (a = 0; a < size; a++) {
-    // Words occuring less than min_count times will be discarded from the vocab
+  for (a = 1; a < size; a++) {
+    // Words occurring less than min_count times will be discarded from the vocab
     if (vocab[a].cn < min_count) {
       vocab_size--;
-      free(vocab[vocab_size].word);
+      free(vocab[a].word);
+      vocab[a].word = NULL;
     } else {
       // Hash will be re-computed, as after the sorting it is not actual
       hash=GetWordHash(vocab[a].word);
@@ -168,7 +169,7 @@ void SortVocab() {
       train_words += vocab[a].cn;
     }
   }
-  vocab = (struct vocab_word *)realloc(vocab, (vocab_size + 1) * sizeof(struct vocab_word));
+  vocab = (struct vocab_word *)realloc(vocab, vocab_size * sizeof(struct vocab_word));
   // Allocate memory for the binary tree construction
   for (a = 0; a < vocab_size; a++) {
     vocab[a].code = (char *)calloc(MAX_CODE_LENGTH, sizeof(char));
@@ -348,16 +349,16 @@ void InitNet() {
     a = posix_memalign((void **)&syn1, 128, (long long)vocab_size * layer1_size * sizeof(real));
     if (syn1 == NULL) {printf("Memory allocation failed\n"); exit(1);}
     for (b = 0; b < layer1_size; b++) for (a = 0; a < vocab_size; a++)
-     syn1[a * layer1_size + b] = 0;
+      syn1[a * layer1_size + b] = 0;
   }
   if (negative>0) {
     a = posix_memalign((void **)&syn1neg, 128, (long long)vocab_size * layer1_size * sizeof(real));
     if (syn1neg == NULL) {printf("Memory allocation failed\n"); exit(1);}
     for (b = 0; b < layer1_size; b++) for (a = 0; a < vocab_size; a++)
-     syn1neg[a * layer1_size + b] = 0;
+      syn1neg[a * layer1_size + b] = 0;
   }
   for (b = 0; b < layer1_size; b++) for (a = 0; a < vocab_size; a++)
-   syn0[a * layer1_size + b] = (rand() / (real)RAND_MAX - 0.5) / layer1_size;
+    syn0[a * layer1_size + b] = (rand() / (real)RAND_MAX - 0.5) / layer1_size;
   CreateBinaryTree();
 }
 
@@ -379,8 +380,8 @@ void *TrainModelThread(void *id) {
       if ((debug_mode > 1)) {
         now=clock();
         printf("%cAlpha: %f  Progress: %.2f%%  Words/thread/sec: %.2fk  ", 13, alpha,
-         word_count_actual / (real)(train_words + 1) * 100,
-         word_count_actual / ((real)(now - start + 1) / (real)CLOCKS_PER_SEC * 1000));
+          word_count_actual / (real)(train_words + 1) * 100,
+          word_count_actual / ((real)(now - start + 1) / (real)CLOCKS_PER_SEC * 1000));
         fflush(stdout);
       }
       alpha = starting_alpha * (1 - word_count_actual / (real)(train_words + 1));
@@ -679,7 +680,7 @@ int main(int argc, char **argv) {
   if ((i = ArgPos((char *)"-classes", argc, argv)) > 0) classes = atoi(argv[i + 1]);
   vocab = (struct vocab_word *)calloc(vocab_max_size, sizeof(struct vocab_word));
   vocab_hash = (int *)calloc(vocab_hash_size, sizeof(int));
-  expTable = (real *)malloc((EXP_TABLE_SIZE + 1) * sizeof(real));
+  expTable = (real *)malloc(EXP_TABLE_SIZE * sizeof(real));
   for (i = 0; i < EXP_TABLE_SIZE; i++) {
     expTable[i] = exp((i / (real)EXP_TABLE_SIZE * 2 - 1) * MAX_EXP); // Precompute the exp() table
     expTable[i] = expTable[i] / (expTable[i] + 1);                   // Precompute f(x) = x / (x + 1)

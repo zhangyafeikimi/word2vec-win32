@@ -34,4 +34,5 @@ text8
 text8-phrase
 vectors.bin
 vectors-phrase.bin
-
+classes.txt
+classes.sorted.txt

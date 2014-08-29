@@ -109,7 +109,7 @@ int AddWordToVocab(char *word) {
 
 // Used later for sorting by word counts
 int VocabCompare(const void *a, const void *b) {
-    return ((struct vocab_word *)b)->cn - ((struct vocab_word *)a)->cn;
+  return ((struct vocab_word *)b)->cn - ((struct vocab_word *)a)->cn;
 }
 
 // Sorts the vocabulary by frequency using word counts
