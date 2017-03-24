@@ -19,21 +19,26 @@
 #include <malloc.h>
 #include <ctype.h>
 
-const long long max_size = 2000;         // max length of strings
-const long long N = 1;                   // number of closest words
-const long long max_w = 50;              // max length of vocabulary entries
+const long long max_size = 2000;  // max length of strings
+const long long N = 1;            // number of closest words
+const long long max_w = 50;       // max length of vocabulary entries
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
   FILE *f;
-  char st1[max_size], st2[max_size], st3[max_size], st4[max_size], bestw[N][max_size], file_name[max_size], ch;
+  char st1[max_size], st2[max_size], st3[max_size], st4[max_size],
+      bestw[N][max_size], file_name[max_size], ch;
   float dist, len, bestd[N], vec[max_size];
   long long words, size, a, b, c, d, b1, b2, b3, threshold = 0;
   float *M;
   char *vocab;
-  int TCN, CCN = 0, TACN = 0, CACN = 0, SECN = 0, SYCN = 0, SEAC = 0, SYAC = 0, QID = 0, TQ = 0, TQS = 0;
+  int TCN, CCN = 0, TACN = 0, CACN = 0, SECN = 0, SYCN = 0, SEAC = 0, SYAC = 0,
+           QID = 0, TQ = 0, TQS = 0;
   if (argc < 2) {
-    printf("Usage: ./compute-accuracy <FILE> <threshold>\nwhere FILE contains word projections, and threshold is used to reduce vocabulary of the model for fast approximate evaluation (0 = off, otherwise typical value is 30000)\n");
+    printf(
+        "Usage: ./compute-accuracy <FILE> <threshold>\nwhere FILE contains "
+        "word projections, and threshold is used to reduce vocabulary of the "
+        "model for fast approximate evaluation (0 = off, otherwise typical "
+        "value is 30000)\n");
     return 0;
   }
   strcpy(file_name, argv[1]);
@@ -44,17 +49,20 @@ int main(int argc, char **argv)
     return -1;
   }
   fscanf(f, "%lld", &words);
-  if (threshold) if (words > threshold) words = threshold;
+  if (threshold)
+    if (words > threshold) words = threshold;
   fscanf(f, "%lld", &size);
   vocab = (char *)malloc(words * max_w * sizeof(char));
   M = (float *)malloc(words * size * sizeof(float));
   if (M == NULL) {
-    printf("Cannot allocate memory: %lld MB\n", words * size * sizeof(float) / 1048576);
+    printf("Cannot allocate memory: %lld MB\n",
+           words * size * sizeof(float) / 1048576);
     return -1;
   }
   for (b = 0; b < words; b++) {
     fscanf(f, "%s%c", &vocab[b * max_w], &ch);
-    for (a = 0; a < max_w; a++) vocab[b * max_w + a] = toupper(vocab[b * max_w + a]);
+    for (a = 0; a < max_w; a++)
+      vocab[b * max_w + a] = toupper(vocab[b * max_w + a]);
     for (a = 0; a < size; a++) fread(&M[a + b * size], sizeof(float), 1, f);
     len = 0;
     for (a = 0; a < size; a++) len += M[a + b * size] * M[a + b * size];
@@ -71,8 +79,13 @@ int main(int argc, char **argv)
     if ((!strcmp(st1, ":")) || (!strcmp(st1, "EXIT")) || feof(stdin)) {
       if (TCN == 0) TCN = 1;
       if (QID != 0) {
-        printf("ACCURACY TOP1: %.2f %%  (%d / %d)\n", CCN / (float)TCN * 100, CCN, TCN);
-        printf("Total accuracy: %.2f %%   Semantic accuracy: %.2f %%   Syntactic accuracy: %.2f %% \n", CACN / (float)TACN * 100, SEAC / (float)SECN * 100, SYAC / (float)SYCN * 100);
+        printf("ACCURACY TOP1: %.2f %%  (%d / %d)\n", CCN / (float)TCN * 100,
+               CCN, TCN);
+        printf(
+            "Total accuracy: %.2f %%   Semantic accuracy: %.2f %%   Syntactic "
+            "accuracy: %.2f %% \n",
+            CACN / (float)TACN * 100, SEAC / (float)SECN * 100,
+            SYAC / (float)SYCN * 100);
       }
       QID++;
       scanf("%s", st1);
@@ -86,14 +99,17 @@ int main(int argc, char **argv)
     scanf("%s", st2);
     for (a = 0; a < strlen(st2); a++) st2[a] = toupper(st2[a]);
     scanf("%s", st3);
-    for (a = 0; a<strlen(st3); a++) st3[a] = toupper(st3[a]);
+    for (a = 0; a < strlen(st3); a++) st3[a] = toupper(st3[a]);
     scanf("%s", st4);
     for (a = 0; a < strlen(st4); a++) st4[a] = toupper(st4[a]);
-    for (b = 0; b < words; b++) if (!strcmp(&vocab[b * max_w], st1)) break;
+    for (b = 0; b < words; b++)
+      if (!strcmp(&vocab[b * max_w], st1)) break;
     b1 = b;
-    for (b = 0; b < words; b++) if (!strcmp(&vocab[b * max_w], st2)) break;
+    for (b = 0; b < words; b++)
+      if (!strcmp(&vocab[b * max_w], st2)) break;
     b2 = b;
-    for (b = 0; b < words; b++) if (!strcmp(&vocab[b * max_w], st3)) break;
+    for (b = 0; b < words; b++)
+      if (!strcmp(&vocab[b * max_w], st3)) break;
     b3 = b;
     for (a = 0; a < N; a++) bestd[a] = 0;
     for (a = 0; a < N; a++) bestw[a][0] = 0;
@@ -101,9 +117,11 @@ int main(int argc, char **argv)
     if (b1 == words) continue;
     if (b2 == words) continue;
     if (b3 == words) continue;
-    for (b = 0; b < words; b++) if (!strcmp(&vocab[b * max_w], st4)) break;
+    for (b = 0; b < words; b++)
+      if (!strcmp(&vocab[b * max_w], st4)) break;
     if (b == words) continue;
-    for (a = 0; a < size; a++) vec[a] = (M[a + b2 * size] - M[a + b1 * size]) + M[a + b3 * size];
+    for (a = 0; a < size; a++)
+      vec[a] = (M[a + b2 * size] - M[a + b1 * size]) + M[a + b3 * size];
     TQS++;
     for (c = 0; c < words; c++) {
       if (c == b1) continue;
@@ -126,12 +144,19 @@ int main(int argc, char **argv)
     if (!strcmp(st4, bestw[0])) {
       CCN++;
       CACN++;
-      if (QID <= 5) SEAC++; else SYAC++;
+      if (QID <= 5)
+        SEAC++;
+      else
+        SYAC++;
     }
-    if (QID <= 5) SECN++; else SYCN++;
+    if (QID <= 5)
+      SECN++;
+    else
+      SYCN++;
     TCN++;
     TACN++;
   }
-  printf("Questions seen / total: %d %d   %.2f %% \n", TQS, TQ, TQS/(float)TQ*100);
+  printf("Questions seen / total: %d %d   %.2f %% \n", TQS, TQ,
+         TQS / (float)TQ * 100);
   return 0;
 }
