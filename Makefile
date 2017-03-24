@@ -15,6 +15,9 @@ word-analogy : word-analogy.c
 compute-accuracy : compute-accuracy.c
 	$(CC) compute-accuracy.c -o compute-accuracy $(CFLAGS)
 
+word2vec-blas : word2vec.c
+	$(CC) word2vec.c -o word2vec-blas $(CFLAGS) -DHAVE_CBLAS=1 -lopenblas
+
 clean:
-	rm -f word2vec word2phrase distance word-analogy compute-accuracy
-	rm -f word2vec.exe word2phrase.exe distance.exe word-analogy.exe compute-accuracy.exe
+	rm -f word2vec word2vec-blas word2phrase distance word-analogy compute-accuracy
+	rm -f word2vec.exe word2vec-blas.exe word2phrase.exe distance.exe word-analogy.exe compute-accuracy.exe

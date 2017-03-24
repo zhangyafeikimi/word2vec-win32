@@ -23,6 +23,17 @@
 #include <pthread.h>
 #endif
 
+// CBLAS declaration
+#if HAVE_CBLAS == 1
+extern void cblas_scopy(const int n, const float *x, const int incx, float *y,
+                        const int incy);
+extern void cblas_saxpy(const int n, const float alpha, const float *x,
+                        const int incx, float *y, const int incy);
+extern float cblas_sdot(const int n, const float *x, const int incx,
+                        const float *y, const int incy);
+static const float zero = 0;
+#endif
+
 #define MAX_STRING 100
 #define EXP_TABLE_SIZE 1000
 #define MAX_EXP 6
@@ -454,8 +465,13 @@ void *TrainModelThread(void *id) {
     }
     word = sen[sentence_position];
     if (word == -1) continue;
+#if HAVE_CBLAS == 1
+    cblas_scopy(layer1_size, &zero, 0, neu1, 1);
+    cblas_scopy(layer1_size, &zero, 0, neu1e, 1);
+#else
     for (c = 0; c < layer1_size; c++) neu1[c] = 0;
     for (c = 0; c < layer1_size; c++) neu1e[c] = 0;
+#endif
     next_random = next_random * (unsigned long long)25214903917 + 11;
     b = next_random % window;
     if (cbow) {  // train the cbow architecture
@@ -468,18 +484,28 @@ void *TrainModelThread(void *id) {
           if (c >= sentence_length) continue;
           last_word = sen[c];
           if (last_word == -1) continue;
+#if HAVE_CBLAS == 1
+          cblas_saxpy(layer1_size, 1.0f, syn0 + last_word * layer1_size, 1,
+                      neu1, 1);
+#else
           for (c = 0; c < layer1_size; c++)
             neu1[c] += syn0[c + last_word * layer1_size];
+#endif
           cw++;
         }
       if (cw) {
         for (c = 0; c < layer1_size; c++) neu1[c] /= cw;
         if (hs)
           for (d = 0; d < vocab[word].codelen; d++) {
-            f = 0;
             l2 = vocab[word].point[d] * layer1_size;
+#if HAVE_CBLAS == 1
             // Propagate hidden -> output
+            f = cblas_sdot(layer1_size, neu1, 1, syn1 + l2, 1);
+#else
+            // Propagate hidden -> output
+            f = 0;
             for (c = 0; c < layer1_size; c++) f += neu1[c] * syn1[c + l2];
+#endif
             if (f <= -MAX_EXP)
               continue;
             else if (f >= MAX_EXP)
@@ -489,10 +515,17 @@ void *TrainModelThread(void *id) {
                                  (EXP_TABLE_SIZE / MAX_EXP / 2))];
             // 'g' is the gradient multiplied by the learning rate
             g = (1 - vocab[word].code[d] - f) * alpha;
+#if HAVE_CBLAS == 1
+            // Propagate errors output -> hidden
+            cblas_saxpy(layer1_size, g, syn1 + l2, 1, neu1e, 1);
+            // Learn weights hidden -> output
+            cblas_saxpy(layer1_size, g, neu1, 1, syn1 + l2, 1);
+#else
             // Propagate errors output -> hidden
             for (c = 0; c < layer1_size; c++) neu1e[c] += g * syn1[c + l2];
             // Learn weights hidden -> output
             for (c = 0; c < layer1_size; c++) syn1[c + l2] += g * neu1[c];
+#endif
           }
         // NEGATIVE SAMPLING
         if (negative > 0)
@@ -508,8 +541,12 @@ void *TrainModelThread(void *id) {
               label = 0;
             }
             l2 = target * layer1_size;
+#if HAVE_CBLAS == 1
+            f = cblas_sdot(layer1_size, neu1, 1, syn1neg + l2, 1);
+#else
             f = 0;
             for (c = 0; c < layer1_size; c++) f += neu1[c] * syn1neg[c + l2];
+#endif
             if (f > MAX_EXP)
               g = (label - 1) * alpha;
             else if (f < -MAX_EXP)
@@ -518,8 +555,13 @@ void *TrainModelThread(void *id) {
               g = (label - expTable[(int)((f + MAX_EXP) *
                                           (EXP_TABLE_SIZE / MAX_EXP / 2))]) *
                   alpha;
+#if HAVE_CBLAS == 1
+            cblas_saxpy(layer1_size, g, syn1neg + l2, 1, neu1e, 1);
+            cblas_saxpy(layer1_size, g, neu1, 1, syn1neg + l2, 1);
+#else
             for (c = 0; c < layer1_size; c++) neu1e[c] += g * syn1neg[c + l2];
             for (c = 0; c < layer1_size; c++) syn1neg[c + l2] += g * neu1[c];
+#endif
           }
         // hidden -> in
         for (a = b; a < window * 2 + 1 - b; a++)
@@ -529,8 +571,13 @@ void *TrainModelThread(void *id) {
             if (c >= sentence_length) continue;
             last_word = sen[c];
             if (last_word == -1) continue;
+#if HAVE_CBLAS == 1
+            cblas_saxpy(layer1_size, 1, neu1e, 1,
+                        syn0 + last_word * layer1_size, 1);
+#else
             for (c = 0; c < layer1_size; c++)
               syn0[c + last_word * layer1_size] += neu1e[c];
+#endif
           }
       }
     } else {  // train skip-gram
@@ -546,11 +593,16 @@ void *TrainModelThread(void *id) {
           // HIERARCHICAL SOFTMAX
           if (hs)
             for (d = 0; d < vocab[word].codelen; d++) {
-              f = 0;
               l2 = vocab[word].point[d] * layer1_size;
+#if HAVE_CBLAS == 1
               // Propagate hidden -> output
+              f = cblas_sdot(layer1_size, syn0 + l1, 1, syn1 + l2, 1);
+#else
+              // Propagate hidden -> output
+              f = 0;
               for (c = 0; c < layer1_size; c++)
                 f += syn0[c + l1] * syn1[c + l2];
+#endif
               if (f <= -MAX_EXP)
                 continue;
               else if (f >= MAX_EXP)
@@ -560,11 +612,18 @@ void *TrainModelThread(void *id) {
                                    (EXP_TABLE_SIZE / MAX_EXP / 2))];
               // 'g' is the gradient multiplied by the learning rate
               g = (1 - vocab[word].code[d] - f) * alpha;
+#if HAVE_CBLAS == 1
+              // Propagate errors output -> hidden
+              cblas_saxpy(layer1_size, g, syn1 + l2, 1, neu1e, 1);
+              // Learn weights hidden -> output
+              cblas_saxpy(layer1_size, g, syn0 + l1, 1, syn1 + l2, 1);
+#else
               // Propagate errors output -> hidden
               for (c = 0; c < layer1_size; c++) neu1e[c] += g * syn1[c + l2];
               // Learn weights hidden -> output
               for (c = 0; c < layer1_size; c++)
                 syn1[c + l2] += g * syn0[c + l1];
+#endif
             }
           // NEGATIVE SAMPLING
           if (negative > 0)
@@ -592,12 +651,22 @@ void *TrainModelThread(void *id) {
                 g = (label - expTable[(int)((f + MAX_EXP) *
                                             (EXP_TABLE_SIZE / MAX_EXP / 2))]) *
                     alpha;
+#if HAVE_CBLAS == 1
+              cblas_saxpy(layer1_size, g, syn1neg + l2, 1, neu1e, 1);
+              cblas_saxpy(layer1_size, g, syn0 + l1, 1, syn1neg + l2, 1);
+#else
               for (c = 0; c < layer1_size; c++) neu1e[c] += g * syn1neg[c + l2];
               for (c = 0; c < layer1_size; c++)
                 syn1neg[c + l2] += g * syn0[c + l1];
+#endif
             }
+#if HAVE_CBLAS == 1
+          // Learn weights input -> hidden
+          cblas_saxpy(layer1_size, 1, neu1e, 1, syn0 + l1, 1);
+#else
           // Learn weights input -> hidden
           for (c = 0; c < layer1_size; c++) syn0[c + l1] += neu1e[c];
+#endif
         }
     }
     sentence_position++;
