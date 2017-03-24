@@ -16,7 +16,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#if defined _WIN32
+#include "win32-port.h"
+#else
 #include <pthread.h>
+#endif
 
 #define MAX_STRING 60
 
