@@ -6,15 +6,6 @@
 *.o
 *.co
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-
 # Visual Studio
 *sdf
 *.suo
@@ -23,12 +14,6 @@
 Debug
 Release
 
-# scons
-.sconf_temp/
-.sconsign.dblite
-*test
-*log
-
 *.exe
 text8
 text8-phrase
@@ -36,3 +21,9 @@ vectors.bin
 vectors-phrase.bin
 classes.txt
 classes.sorted.txt
+
+compute-accuracy
+distance
+word-analogy
+word2phrase
+word2vec
