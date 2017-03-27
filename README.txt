@@ -19,3 +19,6 @@ is finished, the user can interactively explore the similarity of the words.
 
 More information about the scripts is provided at https://code.google.com/p/word2vec/
 
+------------------------------------------------------
+In order to get Python wrapper (https://github.com/danielfrg/word2vec) working 
+added word2vec-doc2vec tool support (https://github.com/nliu86/word2vec-doc2vec)
