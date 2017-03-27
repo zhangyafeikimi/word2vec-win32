@@ -5,6 +5,10 @@
 *.lo
 *.o
 *.co
+*.obj
+*.iobj
+*.ipdb
+*.pdb
 
 # Visual Studio
 *sdf
@@ -28,3 +32,4 @@ word-analogy
 word2phrase
 word2vec
 word2vec-blas
+*.opendb
