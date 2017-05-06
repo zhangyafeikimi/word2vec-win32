@@ -23,14 +23,16 @@
 #include <pthread.h>
 #endif
 
-// CBLAS declaration
 #if HAVE_CBLAS == 1
+// CBLAS declaration
 extern void cblas_scopy(const int n, const float *x, const int incx, float *y,
                         const int incy);
 extern void cblas_saxpy(const int n, const float alpha, const float *x,
                         const int incx, float *y, const int incy);
 extern float cblas_sdot(const int n, const float *x, const int incx,
                         const float *y, const int incy);
+extern void cblas_sscal(const int n, const float alpha, float *x,
+                        const int incx);
 static const float zero = 0;
 #endif
 
@@ -383,7 +385,11 @@ void InitNet() {
       exit(1);
     }
     for (a = 0; a < vocab_size; a++)
+#if HAVE_CBLAS == 1
+      cblas_scopy(layer1_size, &zero, 1, syn1 + a * layer1_size, 1);
+#else
       for (b = 0; b < layer1_size; b++) syn1[a * layer1_size + b] = 0;
+#endif
   }
   if (negative > 0) {
     a = posix_memalign((void **)&syn1neg, 128,
@@ -393,7 +399,11 @@ void InitNet() {
       exit(1);
     }
     for (a = 0; a < vocab_size; a++)
+#if HAVE_CBLAS == 1
+      cblas_scopy(layer1_size, &zero, 0, syn1neg + a * layer1_size, 1);
+#else
       for (b = 0; b < layer1_size; b++) syn1neg[a * layer1_size + b] = 0;
+#endif
   }
   for (a = 0; a < vocab_size; a++)
     for (b = 0; b < layer1_size; b++) {
@@ -494,7 +504,11 @@ void *TrainModelThread(void *id) {
           cw++;
         }
       if (cw) {
+#if HAVE_CBLAS == 1
+        cblas_sscal(layer1_size, 1.0f / cw, neu1, 1);
+#else
         for (c = 0; c < layer1_size; c++) neu1[c] /= cw;
+#endif
         if (hs)
           for (d = 0; d < vocab[word].codelen; d++) {
             l2 = vocab[word].point[d] * layer1_size;
@@ -589,7 +603,11 @@ void *TrainModelThread(void *id) {
           last_word = sen[c];
           if (last_word == -1) continue;
           l1 = last_word * layer1_size;
+#if HAVE_CBLAS == 1
+          cblas_scopy(layer1_size, &zero, 0, neu1e, 1);
+#else
           for (c = 0; c < layer1_size; c++) neu1e[c] = 0;
+#endif
           // HIERARCHICAL SOFTMAX
           if (hs)
             for (d = 0; d < vocab[word].codelen; d++) {
@@ -640,9 +658,13 @@ void *TrainModelThread(void *id) {
                 label = 0;
               }
               l2 = target * layer1_size;
+#if HAVE_CBLAS == 1
+              f = cblas_sdot(layer1_size, syn0 + l1, 1, syn1neg + l2, 1);
+#else
               f = 0;
               for (c = 0; c < layer1_size; c++)
                 f += syn0[c + l1] * syn1neg[c + l2];
+#endif
               if (f > MAX_EXP)
                 g = (label - 1) * alpha;
               else if (f < -MAX_EXP)
