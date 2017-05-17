@@ -75,8 +75,8 @@ void InitUnigramTable() {
   double train_words_pow = 0;
   double d1, power = 0.75;
   table = (int *)malloc(table_size * sizeof(int));
-  for (a = 0; a < vocab_size; a++) train_words_pow += pow(vocab[a].cn, power);
-  i = 0;
+  for (a = 1; a < vocab_size; a++) train_words_pow += pow(vocab[a].cn, power);
+  i = 1;
   d1 = pow(vocab[i].cn, power) / train_words_pow;
   for (a = 0; a < table_size; a++) {
     table[a] = i;
@@ -550,7 +550,6 @@ void *TrainModelThread(void *id) {
             } else {
               next_random = next_random * (unsigned long long)25214903917 + 11;
               target = table[(next_random >> 16) % table_size];
-              if (target == 0) target = next_random % (vocab_size - 1) + 1;
               if (target == word) continue;
               label = 0;
             }
@@ -653,7 +652,6 @@ void *TrainModelThread(void *id) {
                 next_random =
                     next_random * (unsigned long long)25214903917 + 11;
                 target = table[(next_random >> 16) % table_size];
-                if (target == 0) target = next_random % (vocab_size - 1) + 1;
                 if (target == word) continue;
                 label = 0;
               }
