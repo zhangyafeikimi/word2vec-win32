@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\word2vec-sentence2vec.c" />
+    <ClCompile Include="..\word2vec-doc2vec.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{4192BAE0-FC98-4AE4-819A-65C0B896C38E}</ProjectGuid>
