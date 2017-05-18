@@ -32,4 +32,5 @@ word-analogy
 word2phrase
 word2vec
 word2vec-blas
+word2vec-sentence2vec
 *.opendb
