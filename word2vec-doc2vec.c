@@ -46,8 +46,8 @@ struct vocab_word *vocab;
 int binary = 0, cbow = 1, debug_mode = 2, window = 5, min_count = 5,
     num_threads = 12, min_reduce = 1;
 int *vocab_hash;
-long long vocab_max_size = 1000, vocab_size = 0, layer1_size = 100,
-          sentence_vectors = 0;
+long long vocab_max_size = 1000, vocab_size = 0, layer1_size = 100;
+long long sentence_vectors = 0;
 long long train_words = 0, word_count_actual = 0, iter = 5, file_size = 0,
           classes = 0;
 real alpha = 0.025, starting_alpha, sample = 1e-3;
@@ -60,17 +60,17 @@ int *table;
 
 void InitUnigramTable() {
   int a, i;
-  long long train_words_pow = 0;
-  real d1, power = 0.75;
+  double train_words_pow = 0;
+  double d1, power = 0.75;
   table = (int *)malloc(table_size * sizeof(int));
-  for (a = 0; a < vocab_size; a++) train_words_pow += pow(vocab[a].cn, power);
-  i = 0;
-  d1 = pow(vocab[i].cn, power) / (real)train_words_pow;
+  for (a = 1; a < vocab_size; a++) train_words_pow += pow(vocab[a].cn, power);
+  i = 1;
+  d1 = pow(vocab[i].cn, power) / train_words_pow;
   for (a = 0; a < table_size; a++) {
     table[a] = i;
-    if (a / (real)table_size > d1) {
+    if (a / (double)table_size > d1) {
       i++;
-      d1 += pow(vocab[i].cn, power) / (real)train_words_pow;
+      d1 += pow(vocab[i].cn, power) / train_words_pow;
     }
     if (i >= vocab_size) i = vocab_size - 1;
   }
@@ -165,9 +165,9 @@ void SortVocab() {
   train_words = 0;
   for (a = 0; a < size; a++) {
     // Words occuring less than min_count times will be discarded from the vocab
-    if (vocab[a].cn < min_count) {
+    if ((vocab[a].cn < min_count) && (a != 0)) {
       vocab_size--;
-      free(vocab[vocab_size].word);
+      free(vocab[a].word);
     } else {
       // Hash will be re-computed, as after the sorting it is not actual
       hash = GetWordHash(vocab[a].word);
@@ -512,7 +512,6 @@ void *TrainModelThread(void *id) {
             } else {
               next_random = next_random * (unsigned long long)25214903917 + 11;
               target = table[(next_random >> 16) % table_size];
-              if (target == 0) target = next_random % (vocab_size - 1) + 1;
               if (target == word) continue;
               label = 0;
             }
@@ -594,7 +593,6 @@ void *TrainModelThread(void *id) {
                 next_random =
                     next_random * (unsigned long long)25214903917 + 11;
                 target = table[(next_random >> 16) % table_size];
-                if (target == 0) target = next_random % (vocab_size - 1) + 1;
                 if (target == word) continue;
                 label = 0;
               }
